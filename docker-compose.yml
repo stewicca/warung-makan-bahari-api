@@ -1,0 +1,49 @@
+services:
+  api:
+    image: "${REGISTRY}/${IMAGE_NAME}:latest"
+    container_name: wmb-api
+    depends_on:
+      - db
+      - redis
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    env_file:
+      - .env
+    volumes:
+      - /etc/ssl/keystore/keystore.p12:/etc/ssl/keystore/keystore.p12
+    networks:
+      - wmb-network
+    ports:
+      - "8443:8443"
+  db:
+    image: postgres:alpine3.20
+    container_name: postgresql
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    restart: always
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - wmb-network
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS
+    env_file:
+      - .env
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
+    volumes:
+      - redis-data:/data
+    networks:
+      - wmb-network
+volumes:
+  db-data:
+  redis-data:
+networks:
+  wmb-network:
